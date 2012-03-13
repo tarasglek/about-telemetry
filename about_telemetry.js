@@ -45,7 +45,7 @@ function getHTMLTable(stats, isMainThread) {
   }
 
 function do_search(name) {
-  let ls = document.getElementsByClassName("main");
+  let ls = document.getElementsByClassName("histogram");
   let ret = ""
   let re = new RegExp(name, "i");
   for each (let e in ls) {
@@ -64,7 +64,7 @@ function do_search(name) {
 function incremental_search() {
   clearTimeout(this._searchTimeout);
   let input = this;
-  this._searchTimeout = setTimeout(function() {do_search(input.value)}, 200);
+  this._searchTimeout = setTimeout(function() {do_search(input.value)}, 300);
 }
 
 function addHeader(parent) {
@@ -114,7 +114,7 @@ function generate() {
     var buckets = v.histogram_type == Telemetry.HISTOGRAM_BOOLEAN ? [0,1] : v.ranges;
     var average =  v.sum / sample_count
     let div = document.createElement('div');
-    div.className = "main";
+    div.className = "histogram";
     div.id = key;
     let divTitle = document.createElement("div");
     divTitle.appendChild(document.createTextNode(key));

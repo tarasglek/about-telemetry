@@ -1,5 +1,5 @@
-.main {float:left; border-style:solid; border-color:gray; border-width:1; white-space: nowrap; padding:10px }
-.main DIV:first-child {text-overflow:ellipsis;width:100%;white-space: nowrap; overflow: hidden;}
+.histogram {float:left; border-style:solid; border-color:gray; border-width:1; white-space: nowrap; padding:10px }
+.histogram DIV:first-child {text-overflow:ellipsis;width:100%;white-space: nowrap; overflow: hidden;}
 .bar DIV.above { background-color: #FFFFFF; width: 2em; border: 0px;}
 .bar DIV { background-color: #0000FF;  margin: 0px; padding: 0px;border: 1px solid #0000b0;}
 .bar { margin: 2px; text-align: center; float:left; font-family:monospace;}
