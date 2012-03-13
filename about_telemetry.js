@@ -7,20 +7,21 @@ Cu.import("resource://gre/modules/Services.jsm");
 const PREF_ENABLED = "toolkit.telemetry.enabled";
 const HEIGHT = 18
 
-function graph(values, max_value) {
-  var html = ""
+function graph(parent, values, max_value) {
   for each ([label, value] in values) {
-    var below = Math.round(HEIGHT * (value / max_value)*10)/10
-    var above = HEIGHT - below
-    html += '<div class="bar">'
-    html += '<div class="above" style="height: ' + above + 'em;"></div>'
+    var belowEm = Math.round(HEIGHT * (value / max_value)*10)/10
+    var aboveEm = HEIGHT - belowEm
+    var bar = document.createElement("div");
+    bar.className = "bar";
+    // TODO: I can't set the style for createElement()ed elements :(
+    var html = '<div class="above" style="height: ' + aboveEm + 'em;"></div>'
     html += value ? value : "&nbsp;"
     
-    html += '<div class="below" style="height: ' + below + 'em;"></div>'
+    html += '<div class="below" style="height: ' + belowEm + 'em;"></div>'
     html += label
-    html += '</div>'
+    bar.innerHTML = html;
+    parent.appendChild(bar);
   }
-  return html
 }
 
 function getHTMLTable(stats, isMainThread) {
@@ -64,7 +65,12 @@ function do_search(name) {
 function incremental_search() {
   clearTimeout(this._searchTimeout);
   let input = this;
-  this._searchTimeout = setTimeout(function() {do_search(input.value)}, 300);
+  this._searchTimeout = setTimeout(function() {
+                                     if (input._lastValue == input.value)
+                                       return;
+                                     input._lastValue = input.value;
+                                     do_search(input.value)
+                                   }, 300);
 }
 
 function addHeader(parent) {
@@ -87,6 +93,7 @@ function addHeader(parent) {
     input.setSelectionRange(0, input.value.length);
     input.focus()
     input.onkeydown = incremental_search;
+    input._lastValue = input.value;
   }
   parent.appendChild(document.createElement("hr"));
 }
@@ -117,18 +124,18 @@ function generate() {
     div.className = "histogram";
     div.id = key;
     let divTitle = document.createElement("div");
-    divTitle.appendChild(document.createTextNode(key));
-    divTitle.className = "title";
-    div.appendChild(divTitle);
-    let divStats = document.createElement("div");
-    let stats = sample_count + " samples"
-      + ", average = " + Math.round(average*10)/10
-      + ", sum = " + v.sum;
-    divStats.appendChild(document.createTextNode(stats))
-    div.appendChild(divStats);
-    var max_value = Math.max.apply(Math, v.counts)
-    var first = true
-    var last = 0;
+    divTitle.appendChild(document.createTextNode(key));
+    divTitle.className = "title";
+    div.appendChild(divTitle);
+    let divStats = document.createElement("div");
+    let stats = sample_count + " samples"
+      + ", average = " + Math.round(average*10)/10
+      + ", sum = " + v.sum;
+    divStats.appendChild(document.createTextNode(stats))
+    div.appendChild(divStats);
+    var max_value = Math.max.apply(Math, v.counts)
+    var first = true
+    var last = 0;
     var values = []
     for (var i = 0;i<buckets.length;i++) {
       var count = v.counts[i]
@@ -147,9 +154,7 @@ function generate() {
     if (last && last < buckets.length) {
       values.push([buckets[last],0])
     }
-    var html = graph(values, max_value)
-   
-    div.innerHTML += html;
+    graph(div, values, max_value)
     content.appendChild(div);
   }
   body.appendChild(content);

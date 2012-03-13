@@ -13,12 +13,6 @@ Cu.import("resource://gre/modules/AddonManager.jsm");
 
 const MY_URL = "resource://telemetry-addon/";
 
-function log(msg) {
-  dump(msg+"\n");
-  var c=  Components.classes["@mozilla.org/consoleservice;1"].getService(Components.interfaces.nsIConsoleService);
-  c.logStringMessage(msg);
-}
-
 /**
  * Get the app's name so we can properly dispatch app-specific
  * methods per API call
