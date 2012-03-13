@@ -47,13 +47,13 @@ function getHTMLTable(stats, isMainThread) {
 function do_search(name) {
   let ls = document.getElementsByClassName("main");
   let ret = ""
-  let re = new RegExp(name);
+  let re = new RegExp(name, "i");
   for each (let e in ls) {
     let id = e.id;
     if (typeof id != 'string')
       continue;
  
-    if (!i) {
+    if (!re.exec(id)) {
       e.style.display = "none";
       continue;
     }
@@ -64,7 +64,7 @@ function do_search(name) {
 function incremental_search() {
   clearTimeout(this._searchTimeout);
   let input = this;
-  this._searchTimeout = setTimeout(function() {do_search(input.value.toLowerCase())}, 200);
+  this._searchTimeout = setTimeout(function() {do_search(input.value)}, 200);
 }
 
 function addHeader(parent) {
