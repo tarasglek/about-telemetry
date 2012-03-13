@@ -117,17 +117,18 @@ function generate() {
     div.className = "histogram";
     div.id = key;
     let divTitle = document.createElement("div");
-    divTitle.appendChild(document.createTextNode(key));
-    divTitle.className = "title";
-    div.appendChild(divTitle);
-    let html = '<div>'
-    html += sample_count + " samples"
-    html += ", average = " + Math.round(average*10)/10
-    html += ", sum = " + v.sum
-    html += "</div>"
-    var max_value = Math.max.apply(Math, v.counts)
-    var first = true
-    var last = 0;
+    divTitle.appendChild(document.createTextNode(key));
+    divTitle.className = "title";
+    div.appendChild(divTitle);
+    let divStats = document.createElement("div");
+    let stats = sample_count + " samples"
+      + ", average = " + Math.round(average*10)/10
+      + ", sum = " + v.sum;
+    divStats.appendChild(document.createTextNode(stats))
+    div.appendChild(divStats);
+    var max_value = Math.max.apply(Math, v.counts)
+    var first = true
+    var last = 0;
     var values = []
     for (var i = 0;i<buckets.length;i++) {
       var count = v.counts[i]
@@ -146,7 +147,7 @@ function generate() {
     if (last && last < buckets.length) {
       values.push([buckets[last],0])
     }
-    html += graph(values, max_value)
+    var html = graph(values, max_value)
    
     div.innerHTML += html;
     content.appendChild(div);
