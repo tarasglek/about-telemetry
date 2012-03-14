@@ -64,6 +64,7 @@ function do_search(name) {
     }
     e.style.display = "block";
   }
+  window._searched = name;
 }
 
 function incremental_search() {
@@ -97,7 +98,7 @@ function addHeader(parent) {
     search.focus()
     search.onkeydown = incremental_search;
     search._lastValue = search.value;
-
+    
     parent.appendChild(document.createTextNode(" | "));
     let diff_button = document.createElement("button");
     diff_button.appendChild(document.createTextNode("Diff"));
@@ -142,22 +143,25 @@ function diff() {
   let h = Telemetry.histogramSnapshots;
   window._lastSnapshots = h;
   function is_old(name, old_label, old_value) {
-    var old_hgram = unpackHistogram(old[name]);
-    for each ([label, value] in old_hgram.values) {
+    let old_hgram = unpackHistogram(old[name]);
+    // return true
+    // WTF code below causing weird histogram ordering
+    for each (let [label, value] in old_hgram.values) {
       if (label == old_label && value == old_value) {
         return true;
-        Cu.reportError(name + " is old")
       }
     }
-    Cu.reportError(name + " has new stuff");
     return false;
   }
 
   let e = document.getElementById("histograms");
   e.parentNode.removeChild(e);
-  alert('Red indicates that a bucket has changed')
+  //alert('Red indicates that a bucket has changed')
   e = generate(h, Telemetry.slowSql, is_old);
   document.getElementsByTagName("body")[0].appendChild(e);
+  // restore the search query
+  if (window._searched)
+    do_search(window._searched);
 }
 
 function generate(histogramSnapshots, slowSql, is_old_checker) {
