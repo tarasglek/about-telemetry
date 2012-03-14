@@ -143,6 +143,8 @@ function diff() {
   let h = Telemetry.histogramSnapshots;
   window._lastSnapshots = h;
   function is_old(name, old_label, old_value) {
+    if (!name in old)
+      return false;
     let old_hgram = unpackHistogram(old[name]);
     // return true
     // WTF code below causing weird histogram ordering
