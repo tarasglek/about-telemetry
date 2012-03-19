@@ -5,5 +5,5 @@
 .bar DIV.new { background-color: red;  margin: 0px; padding: 0px;border: 1px solid #0000b0;}
 .bar { margin: 2px; text-align: center; float:left; font-family:monospace;}
 
-.slowSql TH, CAPTION { font-weight: bold; white-space:nowrap; text-align:left; }
-.slowSql CAPTION  { font-size: large; }
+TH.slowSql { font-weight: bold; white-space:nowrap; text-align:left; }
+CAPTION.slowSql { font-weight: bold; white-space:nowrap; text-align:left; font-size: large; }

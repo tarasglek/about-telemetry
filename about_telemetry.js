@@ -6,6 +6,7 @@ const Telemetry = Cc["@mozilla.org/base/telemetry;1"].getService(Ci.nsITelemetry
 Cu.import("resource://gre/modules/Services.jsm");
 
 const PREF_ENABLED = "toolkit.telemetry.enabled";
+const DEBUG_SLOW_SQL = "toolkit.telemetry.debugSlowSql";
 const HEIGHT = 18
 
 function graph(parent, values, max_value, name, is_old_checker) {
@@ -32,8 +33,9 @@ function getHTMLTable(stats, isMainThread) {
     if (Object.keys(stats).length == 0) {
       return "";
     }
-    var listHtml = '\n<table class=slowSql id="' + (isMainThread ? 'main' : 'other') + 'SqlTable">';
-    listHtml += '\n<caption>Slow SQL Statements on ' + (isMainThread ? 'Main' : 'Other') + ' Thread</caption>';
+    var listHtml = '\n<table class=\"slowSql\" id="' + (isMainThread ? 'main' : 'other') + 'SqlTable">';
+    listHtml += '\n<caption class=\"slowSql\">Slow SQL Statements on ';
+    listHtml += (isMainThread ? 'Main' : 'Other') + ' Thread</caption>';
     listHtml += '\n<tr><th>Hits</th><th>Avg. Time (ms)</th><th>Statement</th></tr>';
     for (var key in stats) {
       var hitCount = stats[key][0];
@@ -159,25 +161,46 @@ function diff() {
   let e = document.getElementById("histograms");
   e.parentNode.removeChild(e);
   //alert('Red indicates that a bucket has changed')
-  e = generate(h, Telemetry.slowSql, is_old);
+  e = generate(h, Telemetry.slowSQL, Telemetry.debugSlowSql, is_old);
   document.getElementsByTagName("body")[0].appendChild(e);
   // restore the search query
   if (window._searched)
     do_search(window._searched);
 }
 
-function generate(histogramSnapshots, slowSql, is_old_checker) {
+function generate(histogramSnapshots, slowSql, fullSlowSql, is_old_checker) {
   let content = document.createElement("div");
   content.id = "histograms";
-  var s = slowSql;
-  if (s) {
+  if (slowSql) {
+    let html = "";
+    let sql = slowSql;
+
+    let showFullSlowSql = false;
+    if (fullSlowSql) {
+      try {
+        showFullSlowSql = Services.prefs.getBoolPref(DEBUG_SLOW_SQL);
+      } catch (e) {
+        // Pre-requesite pref isn't set
+      }
+    }
+
+    if (showFullSlowSql) {
+      sql = fullSlowSql;
+      if (Object.keys(fullSlowSql.mainThread).length > 0 ||
+          Object.keys(fullSlowSql.otherThreads).length > 0) {
+        html += "<B>NOTE:</B> Slow SQL debugging is enabled. ";
+        html += "Full SQL strings may be displayed below but they will not be submitted to Telemetry."
+        html += "<BR>\n<BR>\n";
+      }
+    }
+
+    html += getHTMLTable(sql.mainThread, true);
+    html += getHTMLTable(sql.otherThreads, false);
     let div = document.createElement("div");
-    let html = getHTMLTable(s.mainThread, true);
-    html += getHTMLTable(s.otherThreads, false);
-    div.innerHTML = html
+    div.innerHTML = html;
     content.appendChild(div);
   }
- 
+
   for (var name in histogramSnapshots) {
     var hgram = unpackHistogram(histogramSnapshots[name]);
     let div = document.createElement('div');
@@ -203,7 +226,7 @@ function load() {
   var body = document.getElementsByTagName("body")[0];
   addHeader(body);
   window._lastSnapshots = Telemetry.histogramSnapshots;
-  let content = generate(this._lastSnapshots, Telemetry.slowSql);
+  let content = generate(this._lastSnapshots, Telemetry.slowSQL, Telemetry.debugSlowSQL);
   body.appendChild(content);
 }
 
