@@ -161,7 +161,7 @@ function diff() {
   let e = document.getElementById("histograms");
   e.parentNode.removeChild(e);
   //alert('Red indicates that a bucket has changed')
-  e = generate(h, Telemetry.slowSQL, Telemetry.debugSlowSql, is_old);
+  e = generate(h, Telemetry.slowSQL, Telemetry.debugSlowSQL, is_old);
   document.getElementsByTagName("body")[0].appendChild(e);
   // restore the search query
   if (window._searched)
