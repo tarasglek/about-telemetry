@@ -80,6 +80,130 @@ function incremental_search() {
                                    }, 300);
 }
 
+
+function stop_animate_click() {
+  while (this.hasChildNodes()) {
+    this.removeChild(this.lastChild);
+  }
+  this.appendChild(document.createTextNode("Animate"))
+  this.onclick = animate_click;
+  let anidiv = document.getElementById("anidiv");
+  let stats = document.getElementById("targetdiv").stats;
+  while (anidiv.hasChildNodes()) {
+    anidiv.removeChild(anidiv.lastChild);
+  }
+  stats.janks.sort(function ([a, _], [b, __]) b - a)
+  for each (let [ms, jank] in stats.janks) {
+    let d = document.createElement("div");
+    d.appendChild(document.createTextNode(ms + " " + uneval(jank)))
+    anidiv.appendChild(d)
+  }
+  let summary = 
+    "min: " + stats.min + "ms"
+    + "\nmax: " + stats.max + "ms"
+    + "\navg: " + Math.round(stats.sum * 100 / stats.count) / 100 + "ms"
+    + "\n" + stats.janks.length + "/" + stats.count
+    + " (" + Math.round(stats.janks.length * 10000 / stats.count) / 100 + "%) animation steps were on time"
+  let presummary = document.createElement("PRE");
+  presummary.appendChild(document.createTextNode(summary))
+  anidiv.appendChild(presummary);
+}
+
+
+/**
+ * @return {"histogram_name":[[changedColumnIndexA,difference], [changedColumnIndexB, difference], ...], ...}
+ */
+function diff(oldHash, recentHash) {
+  let ret = {};
+  for (var name in recentHash) {
+    let recent = recentHash[name];
+    let old = oldHash[name];
+    if (!old) {
+      let changes = [];
+      for (let i = 0;i<recent.counts.length;i++) {
+        let v = recent.counts[i];
+        if (v)
+          changes.push([i, v])
+      }
+      ret[name] = changes;
+      continue;
+    }
+    let changed_columns = [];
+    for (let i = 0;i < old.counts.length;i++) {
+      let diff = recent.counts[i] - old.counts[i];
+      if (diff)
+        changed_columns.push([i, diff]);
+    }
+    if (changed_columns.length) {
+      ret[name] = changed_columns;
+    }
+  }
+  return ret;
+}
+
+let useless_telemetry_re = /WORD_CACHE|HTML_FOREGROUND_REFLOW_MS/
+
+function animation_loop(now){
+  let targetdiv = document.getElementById("targetdiv");
+  if (!targetdiv) {
+    return;
+  }
+  var deltaMS = now - targetdiv.start;
+  targetdiv.style.left = 90 - Math.abs(deltaMS/50 % 180 - 90) + "%";
+  let stats = targetdiv.stats
+  let newgrams = Telemetry.histogramSnapshots;
+  for (let h in newgrams) {
+    if (useless_telemetry_re.test(h))
+      delete newgrams[h]
+  }
+
+  if (stats.last) {
+    let diff = now - stats.last
+    if (!stats.min)
+      stats.min = diff
+    else
+      stats.min = Math.min(stats.min, diff)
+
+    if (!stats.max)
+      stats.max = diff
+    else
+      stats.max = Math.max(stats.max, diff)
+
+    stats.sum += diff
+    stats.count++;
+    if (diff > 17) {
+      let hgramdiff = window.diff(stats.oldgrams, newgrams);
+      if (Object.keys(hgramdiff).length)
+        stats.janks.push([diff, hgramdiff])
+    }
+  }
+  stats.oldgrams = newgrams
+  stats.last = now;
+  mozRequestAnimationFrame(animation_loop);
+}
+
+function animate_click() {
+  while (this.hasChildNodes()) {
+    this.removeChild(this.lastChild);
+  }
+  this.appendChild(document.createTextNode("Stop Animation"))
+  this.onclick = stop_animate_click;
+  let anidiv = document.getElementById("anidiv");
+  while (anidiv.hasChildNodes()) {
+    anidiv.removeChild(anidiv.lastChild);
+  }
+
+  let targetdiv = document.createElement("span");
+  targetdiv.id = "targetdiv";
+  targetdiv.appendChild(document.createTextNode("BUTTER"));
+  anidiv.appendChild(targetdiv);
+  targetdiv.style.position = "relative";
+  targetdiv.style.left = "50%";
+  targetdiv.start = window.mozAnimationStartTime;
+  targetdiv.stats = {count:0, sum:0, janks:[]}
+  animation_loop(targetdiv.start);
+}
+
 function addHeader(parent) {
   var enabled = false;
   try {
@@ -104,8 +228,18 @@ function addHeader(parent) {
     parent.appendChild(document.createTextNode(" | "));
     let diff_button = document.createElement("button");
     diff_button.appendChild(document.createTextNode("Diff"));
-    diff_button.onclick = diff;
+    diff_button.onclick = diff_click;
     parent.appendChild(diff_button);
+
+    parent.appendChild(document.createTextNode(" | "));
+    let animate_button = document.createElement("button");
+    animate_button.appendChild(document.createTextNode("Animate"));
+    animate_button.onclick = animate_click;
+    parent.appendChild(animate_button);
+
+    let anidiv = document.createElement("div");
+    anidiv.id = "anidiv";
+    parent.appendChild(anidiv);
   }
   parent.appendChild(document.createElement("hr"));
 }
@@ -140,9 +274,10 @@ function unpackHistogram(v/*histogram*/) {
   return {values: values, pretty_average:average, max: max_value, sample_count:sample_count, sum:v.sum}
 }
 
-function diff() {
+function diff_click() {
   let old = window._lastSnapshots;
   let h = Telemetry.histogramSnapshots;
+  // todo use diff() function below instead of unpackHistogram
   window._lastSnapshots = h;
   function is_old(name, old_label, old_value) {
     if (!name in old)
