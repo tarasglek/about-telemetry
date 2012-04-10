@@ -103,7 +103,7 @@ function stop_animate_click() {
     + "\nmax: " + stats.max + "ms"
     + "\navg: " + Math.round(stats.sum * 100 / stats.count) / 100 + "ms"
     + "\n" + stats.janks.length + "/" + stats.count
-    + " (" + Math.round(stats.janks.length * 10000 / stats.count) / 100 + "%) animation steps were on time"
+    + " (" + Math.round(stats.janks.length * 10000 / stats.count) / 100 + "%) animation steps were late"
   let presummary = document.createElement("PRE");
   presummary.appendChild(document.createTextNode(summary))
   anidiv.appendChild(presummary);
